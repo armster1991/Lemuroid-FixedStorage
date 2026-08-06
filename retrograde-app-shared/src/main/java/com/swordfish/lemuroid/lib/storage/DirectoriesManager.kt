@@ -1,12 +1,18 @@
 package com.swordfish.lemuroid.lib.storage
 
 import android.content.Context
+import android.os.Environment
 import java.io.File
 
 class DirectoriesManager(private val appContext: Context) {
+    private fun getLemuroidDirectory(): File =
+        File(Environment.getExternalStorageDirectory(), "Lemuroid").apply {
+            mkdirs()
+        }
+
     @Deprecated("Use the external states directory")
     fun getInternalStatesDirectory(): File =
-        File(appContext.filesDir, "states").apply {
+        File(getLemuroidDirectory(), "savestates").apply {
             mkdirs()
         }
 
@@ -16,27 +22,27 @@ class DirectoriesManager(private val appContext: Context) {
         }
 
     fun getSystemDirectory(): File =
-        File(appContext.filesDir, "system").apply {
+        File(getLemuroidDirectory(), "system").apply {
             mkdirs()
         }
 
     fun getStatesDirectory(): File =
-        File(appContext.getExternalFilesDir(null), "states").apply {
+        File(getLemuroidDirectory(), "savestates").apply {
             mkdirs()
         }
 
     fun getStatesPreviewDirectory(): File =
-        File(appContext.getExternalFilesDir(null), "state-previews").apply {
+        File(getLemuroidDirectory(), "state-previews").apply {
             mkdirs()
         }
 
     fun getSavesDirectory(): File =
-        File(appContext.getExternalFilesDir(null), "saves").apply {
+        File(getLemuroidDirectory(), "saves").apply {
             mkdirs()
         }
 
     fun getInternalRomsDirectory(): File =
-        File(appContext.getExternalFilesDir(null), "roms").apply {
+        File(getLemuroidDirectory(), "roms").apply {
             mkdirs()
         }
 }
