@@ -56,7 +56,6 @@ class TVHomeFragment : BrowseSupportFragment() {
             OnItemViewClickedListener { _, item, _, _ ->
                 when (item) {
                     is Game -> gameInteractor.onGamePlay(item)
-
                     is MetaSystemInfo -> {
                         val action =
                             TVHomeFragmentDirections.actionNavigationSystemsToNavigationGames(
@@ -64,25 +63,19 @@ class TVHomeFragment : BrowseSupportFragment() {
                             )
                         findNavController().navigate(action)
                     }
-
                     is TVSetting -> {
                         when (item.type) {
                             TVSettingType.STOP_RESCAN ->
                                 LibraryIndexScheduler.cancelLibrarySync(
                                     requireContext().applicationContext,
                                 )
-
                             TVSettingType.RESCAN ->
                                 LibraryIndexScheduler.scheduleLibrarySync(
                                     requireContext().applicationContext,
                                 )
-
                             TVSettingType.CHOOSE_DIRECTORY -> Unit
-
                             TVSettingType.SETTINGS -> launchTVSettings()
-
                             TVSettingType.SHOW_ALL_FAVORITES -> launchFavorites()
-
                             TVSettingType.SAVE_SYNC ->
                                 SaveSyncWork.enqueueManualWork(
                                     requireContext().applicationContext,
@@ -106,19 +99,12 @@ class TVHomeFragment : BrowseSupportFragment() {
             includeRecentGames = false,
             includeSystems = false,
         )
-
         setOnSearchClickedListener {
             findNavController().navigate(R.id.navigation_search)
         }
 
-        val factory =
-            TVHomeViewModel.Factory(
-                retrogradeDb,
-                requireContext().applicationContext,
-            )
-
-        val homeViewModel =
-            ViewModelProvider(this, factory)[TVHomeViewModel::class.java]
+        val factory = TVHomeViewModel.Factory(retrogradeDb, requireContext().applicationContext)
+        val homeViewModel = ViewModelProvider(this, factory)[TVHomeViewModel::class.java]
 
         launchOnState(Lifecycle.State.RESUMED) {
             homeViewModel.getViewStates()
@@ -127,23 +113,13 @@ class TVHomeFragment : BrowseSupportFragment() {
     }
 
     private fun update(viewState: TVHomeViewModel.HomeViewState) {
-        val adapterHasFavorites =
-            findAdapterById<ObjectAdapter>(FAVORITES_ADAPTER) != null
+        val adapterHasFavorites = findAdapterById<ObjectAdapter>(FAVORITES_ADAPTER) != null
+        val adapterHasGames = findAdapterById<ObjectAdapter>(RECENTS_ADAPTER) != null
+        val adapterHasSystems = findAdapterById<ObjectAdapter>(SYSTEM_ADAPTER) != null
 
-        val adapterHasGames =
-            findAdapterById<ObjectAdapter>(RECENTS_ADAPTER) != null
-
-        val adapterHasSystems =
-            findAdapterById<ObjectAdapter>(SYSTEM_ADAPTER) != null
-
-        val favoritesChanged =
-            adapterHasFavorites != viewState.favoritesGames.isNotEmpty()
-
-        val recentsChanged =
-            adapterHasGames != viewState.recentGames.isNotEmpty()
-
-        val systemsChanged =
-            adapterHasSystems != viewState.metaSystems.isNotEmpty()
+        val favoritesChanged = adapterHasFavorites != viewState.favoritesGames.isNotEmpty()
+        val recentsChanged = adapterHasGames != viewState.recentGames.isNotEmpty()
+        val systemsChanged = adapterHasSystems != viewState.metaSystems.isNotEmpty()
 
         if (favoritesChanged || recentsChanged || systemsChanged) {
             recreateAdapter(
@@ -155,43 +131,23 @@ class TVHomeFragment : BrowseSupportFragment() {
 
         findAdapterById<ArrayObjectAdapter>(FAVORITES_ADAPTER)?.apply {
             if (viewState.favoritesGames.size <= TVHomeViewModel.CAROUSEL_MAX_ITEMS) {
-                setItems(
-                    viewState.favoritesGames,
-                    LEANBACK_MULTI_DIFF_CALLBACK,
-                )
+                setItems(viewState.favoritesGames, LEANBACK_MULTI_DIFF_CALLBACK)
             } else {
                 val allItems =
-                    viewState.favoritesGames.subList(
-                        0,
-                        TVHomeViewModel.CAROUSEL_MAX_ITEMS,
-                    ) + listOf(
-                        TVSetting(TVSettingType.SHOW_ALL_FAVORITES),
-                    )
-
-                setItems(
-                    allItems,
-                    LEANBACK_MULTI_DIFF_CALLBACK,
-                )
+                    viewState.favoritesGames.subList(0, TVHomeViewModel.CAROUSEL_MAX_ITEMS) +
+                        listOf(TVSetting(TVSettingType.SHOW_ALL_FAVORITES))
+                setItems(allItems, LEANBACK_MULTI_DIFF_CALLBACK)
             }
         }
 
         findAdapterById<ArrayObjectAdapter>(RECENTS_ADAPTER)
-            ?.setItems(
-                viewState.recentGames,
-                LEANBACK_GAME_DIFF_CALLBACK,
-            )
+            ?.setItems(viewState.recentGames, LEANBACK_GAME_DIFF_CALLBACK)
 
         findAdapterById<ArrayObjectAdapter>(SYSTEM_ADAPTER)
-            ?.setItems(
-                viewState.metaSystems,
-                LEANBACK_SYSTEM_DIFF_CALLBACK,
-            )
+            ?.setItems(viewState.metaSystems, LEANBACK_SYSTEM_DIFF_CALLBACK)
 
         findAdapterById<ArrayObjectAdapter>(SETTINGS_ADAPTER)?.setItems(
-            buildSettingsRowItems(
-                viewState.indexInProgress,
-                viewState.scanInProgress,
-            ),
+            buildSettingsRowItems(viewState.indexInProgress, viewState.scanInProgress),
             LEANBACK_SETTING_DIFF_CALLBACK,
         )
     }
@@ -199,12 +155,10 @@ class TVHomeFragment : BrowseSupportFragment() {
     private fun <T> findAdapterById(id: Long): T? {
         for (i: Int in 0 until adapter.size()) {
             val listRow = adapter.get(i) as ListRow
-
             if (listRow.headerItem.id == id) {
                 return listRow.adapter as T
             }
         }
-
         return null
     }
 
@@ -214,17 +168,11 @@ class TVHomeFragment : BrowseSupportFragment() {
         includeSystems: Boolean,
     ) {
         val result = ArrayObjectAdapter(ListRowPresenter())
-
-        val cardSize =
-            resources.getDimensionPixelSize(
-                com.swordfish.lemuroid.lib.R.dimen.card_size,
-            )
-
+        val cardSize = resources.getDimensionPixelSize(com.swordfish.lemuroid.lib.R.dimen.card_size)
         val systemsCardPadding =
             resources.getDimensionPixelSize(
                 com.swordfish.lemuroid.lib.R.dimen.systems_card_padding,
             )
-
         val settingsCardPadding =
             resources.getDimensionPixelSize(
                 com.swordfish.lemuroid.lib.R.dimen.settings_card_padding,
@@ -232,102 +180,32 @@ class TVHomeFragment : BrowseSupportFragment() {
 
         if (includeFavorites) {
             val presenter = ClassPresenterSelector()
-
-            presenter.addClassPresenter(
-                Game::class.java,
-                GamePresenter(cardSize, gameInteractor),
-            )
-
-            presenter.addClassPresenter(
-                TVSetting::class.java,
-                SettingPresenter(
-                    cardSize,
-                    settingsCardPadding,
-                ),
-            )
-
+            presenter.addClassPresenter(Game::class.java, GamePresenter(cardSize, gameInteractor))
+            presenter.addClassPresenter(TVSetting::class.java, SettingPresenter(cardSize, settingsCardPadding))
             val favouritesItems = ArrayObjectAdapter(presenter)
             val title = resources.getString(R.string.tv_home_section_favorites)
-
-            result.add(
-                ListRow(
-                    HeaderItem(FAVORITES_ADAPTER, title),
-                    favouritesItems,
-                ),
-            )
+            result.add(ListRow(HeaderItem(FAVORITES_ADAPTER, title), favouritesItems))
         }
 
         if (includeRecentGames) {
-            val recentItems =
-                ArrayObjectAdapter(
-                    GamePresenter(
-                        cardSize,
-                        gameInteractor,
-                    ),
-                )
-
-            val title =
-                resources.getString(
-                    R.string.tv_home_section_recents,
-                )
-
-            result.add(
-                ListRow(
-                    HeaderItem(RECENTS_ADAPTER, title),
-                    recentItems,
-                ),
-            )
+            val recentItems = ArrayObjectAdapter(GamePresenter(cardSize, gameInteractor))
+            val title = resources.getString(R.string.tv_home_section_recents)
+            result.add(ListRow(HeaderItem(RECENTS_ADAPTER, title), recentItems))
         }
 
         if (includeSystems) {
-            val systemItems =
-                ArrayObjectAdapter(
-                    SystemPresenter(
-                        cardSize,
-                        systemsCardPadding,
-                    ),
-                )
-
-            val title =
-                resources.getString(
-                    R.string.tv_home_section_systems,
-                )
-
-            result.add(
-                ListRow(
-                    HeaderItem(SYSTEM_ADAPTER, title),
-                    systemItems,
-                ),
-            )
+            val systemItems = ArrayObjectAdapter(SystemPresenter(cardSize, systemsCardPadding))
+            val title = resources.getString(R.string.tv_home_section_systems)
+            result.add(ListRow(HeaderItem(SYSTEM_ADAPTER, title), systemItems))
         }
 
-        val settingsItems =
-            ArrayObjectAdapter(
-                SettingPresenter(
-                    cardSize,
-                    settingsCardPadding,
-                ),
-            )
-
+        val settingsItems = ArrayObjectAdapter(SettingPresenter(cardSize, settingsCardPadding))
         settingsItems.setItems(
-            buildSettingsRowItems(
-                indexInProgress = false,
-                scanInProgress = false,
-            ),
+            buildSettingsRowItems(indexInProgress = false, scanInProgress = false),
             LEANBACK_SETTING_DIFF_CALLBACK,
         )
-
-        val settingsTitle =
-            resources.getString(
-                R.string.tv_home_section_settings,
-            )
-
-        result.add(
-            ListRow(
-                HeaderItem(SETTINGS_ADAPTER, settingsTitle),
-                settingsItems,
-            ),
-        )
+        val settingsTitle = resources.getString(R.string.tv_home_section_settings)
+        result.add(ListRow(HeaderItem(SETTINGS_ADAPTER, settingsTitle), settingsItems))
 
         adapter = result
     }
@@ -337,56 +215,25 @@ class TVHomeFragment : BrowseSupportFragment() {
         scanInProgress: Boolean,
     ): List<TVSetting> {
         return mutableListOf<TVSetting>().apply {
-            if (
-                saveSyncManager.isSupported() &&
-                saveSyncManager.isConfigured()
-            ) {
-                add(
-                    TVSetting(
-                        TVSettingType.SAVE_SYNC,
-                        !indexInProgress,
-                    ),
-                )
+            if (saveSyncManager.isSupported() && saveSyncManager.isConfigured()) {
+                add(TVSetting(TVSettingType.SAVE_SYNC, !indexInProgress))
             }
-
             if (scanInProgress) {
-                add(
-                    TVSetting(
-                        TVSettingType.STOP_RESCAN,
-                        true,
-                    ),
-                )
+                add(TVSetting(TVSettingType.STOP_RESCAN, true))
             } else {
-                add(
-                    TVSetting(
-                        TVSettingType.RESCAN,
-                        !indexInProgress,
-                    ),
-                )
+                add(TVSetting(TVSettingType.RESCAN, !indexInProgress))
             }
 
-            add(
-                TVSetting(
-                    TVSettingType.SETTINGS,
-                    !indexInProgress,
-                ),
-            )
+            add(TVSetting(TVSettingType.SETTINGS, !indexInProgress))
         }
     }
 
     private fun launchTVSettings() {
-        startActivity(
-            Intent(
-                requireContext(),
-                TVSettingsActivity::class.java,
-            ),
-        )
+        startActivity(Intent(requireContext(), TVSettingsActivity::class.java))
     }
 
     private fun launchFavorites() {
-        findNavController().navigate(
-            R.id.navigation_favorites,
-        )
+        findNavController().navigate(R.id.navigation_favorites)
     }
 
     companion object {
@@ -402,20 +249,12 @@ class TVHomeFragment : BrowseSupportFragment() {
                     newItem: Any,
                 ): Boolean {
                     return when {
-                        oldItem is Game && newItem is Game -> {
-                            LEANBACK_GAME_DIFF_CALLBACK.areContentsTheSame(
-                                oldItem,
-                                newItem,
-                            )
+                        (oldItem is Game && newItem is Game) -> {
+                            LEANBACK_GAME_DIFF_CALLBACK.areContentsTheSame(oldItem, newItem)
                         }
-
-                        oldItem is TVSetting && newItem is TVSetting -> {
-                            LEANBACK_SETTING_DIFF_CALLBACK.areContentsTheSame(
-                                oldItem,
-                                newItem,
-                            )
+                        (oldItem is TVSetting && newItem is TVSetting) -> {
+                            LEANBACK_SETTING_DIFF_CALLBACK.areContentsTheSame(oldItem, newItem)
                         }
-
                         else -> false
                     }
                 }
@@ -425,20 +264,12 @@ class TVHomeFragment : BrowseSupportFragment() {
                     newItem: Any,
                 ): Boolean {
                     return when {
-                        oldItem is Game && newItem is Game -> {
-                            LEANBACK_GAME_DIFF_CALLBACK.areItemsTheSame(
-                                oldItem,
-                                newItem,
-                            )
+                        (oldItem is Game && newItem is Game) -> {
+                            LEANBACK_GAME_DIFF_CALLBACK.areItemsTheSame(oldItem, newItem)
                         }
-
-                        oldItem is TVSetting && newItem is TVSetting -> {
-                            LEANBACK_SETTING_DIFF_CALLBACK.areItemsTheSame(
-                                oldItem,
-                                newItem,
-                            )
+                        (oldItem is TVSetting && newItem is TVSetting) -> {
+                            LEANBACK_SETTING_DIFF_CALLBACK.areItemsTheSame(oldItem, newItem)
                         }
-
                         else -> false
                     }
                 }
@@ -474,8 +305,7 @@ class TVHomeFragment : BrowseSupportFragment() {
                     oldInfo: MetaSystemInfo,
                     newInfo: MetaSystemInfo,
                 ): Boolean {
-                    return oldInfo.metaSystem.name ==
-                        newInfo.metaSystem.name
+                    return oldInfo.metaSystem.name == newInfo.metaSystem.name
                 }
             }
 
