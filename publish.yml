@@ -1,0 +1,53 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-publish:
+    name: Build and publish signed APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository and cores
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant execute permission to Gradle wrapper
+        run: chmod +x gradlew
+
+      - name: Build signed Free Dynamic release APK
+        run: ./gradlew --stacktrace assembleFreeDynamicRelease
+
+      - name: Rename APK for release
+        shell: bash
+        run: |
+          APK_PATH="$(find lemuroid-app/build/outputs/apk/freeDynamic/release -maxdepth 1 -type f -name '*.apk' | head -n 1)"
+          if [ -z "$APK_PATH" ]; then
+            echo "No APK was generated."
+            exit 1
+          fi
+          cp "$APK_PATH" "Lemuroid-FixedStorage-${GITHUB_REF_NAME}.apk"
+
+      - name: Create GitHub prerelease
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: true
+          generate_release_notes: true
+          files: Lemuroid-FixedStorage-${{ github.ref_name }}.apk
