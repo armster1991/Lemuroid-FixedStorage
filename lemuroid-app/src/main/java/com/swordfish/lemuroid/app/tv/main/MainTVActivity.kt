@@ -2,9 +2,14 @@ package com.swordfish.lemuroid.app.tv.main
 
 import android.Manifest
 import android.app.Activity
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.Settings
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -61,7 +66,7 @@ class MainTVActivity : BaseTVActivity(), BusyActivity {
             }
         }
 
-        ensureLegacyStoragePermissionsIfNeeded()
+        ensureStoragePermissionsIfNeeded()
     }
 
     override fun onActivityResult(
@@ -74,9 +79,48 @@ class MainTVActivity : BaseTVActivity(), BusyActivity {
         when (requestCode) {
             BaseGameActivity.REQUEST_PLAY_GAME -> {
                 GlobalScope.safeLaunch {
-                    gameLaunchTaskHandler.handleGameFinish(false, this@MainTVActivity, resultCode, data)
+                    gameLaunchTaskHandler.handleGameFinish(
+                        false,
+                        this@MainTVActivity,
+                        resultCode,
+                        data,
+                    )
                     ChannelUpdateWork.enqueue(applicationContext)
                 }
+            }
+        }
+    }
+
+    private fun ensureStoragePermissionsIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            ensureAllFilesAccessPermission()
+        } else {
+            ensureLegacyStoragePermissionsIfNeeded()
+        }
+    }
+
+    private fun ensureAllFilesAccessPermission() {
+        if (Environment.isExternalStorageManager()) {
+            return
+        }
+
+        val packageUri = Uri.parse("package:$packageName")
+
+        try {
+            val appPermissionIntent =
+                Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                    data = packageUri
+                }
+
+            startActivity(appPermissionIntent)
+        } catch (_: ActivityNotFoundException) {
+            try {
+                val generalPermissionIntent =
+                    Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+
+                startActivity(generalPermissionIntent)
+            } catch (_: ActivityNotFoundException) {
+                finish()
             }
         }
     }
@@ -93,11 +137,17 @@ class MainTVActivity : BaseTVActivity(), BusyActivity {
                     finish()
                 }
             }
+
         requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
     }
 
     private fun hasLegacyPermissions(): Boolean {
-        val result = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+        val result =
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+            )
+
         return result == PackageManager.PERMISSION_GRANTED
     }
 
@@ -129,7 +179,13 @@ class MainTVActivity : BaseTVActivity(), BusyActivity {
                 retrogradeDb: RetrogradeDatabase,
                 shortcutsGenerator: ShortcutsGenerator,
                 gameLauncher: GameLauncher,
-            ) = GameInteractor(activity, retrogradeDb, true, shortcutsGenerator, gameLauncher)
+            ) = GameInteractor(
+                activity,
+                retrogradeDb,
+                true,
+                shortcutsGenerator,
+                gameLauncher,
+            )
         }
     }
 }
