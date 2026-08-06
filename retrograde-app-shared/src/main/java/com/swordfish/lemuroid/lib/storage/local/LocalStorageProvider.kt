@@ -10,11 +10,11 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
 package com.swordfish.lemuroid.lib.storage.local
@@ -28,7 +28,6 @@ import com.swordfish.lemuroid.common.kotlin.isZipped
 import com.swordfish.lemuroid.lib.R
 import com.swordfish.lemuroid.lib.library.db.entity.DataFile
 import com.swordfish.lemuroid.lib.library.db.entity.Game
-import com.swordfish.lemuroid.lib.preferences.SharedPreferencesHelper
 import com.swordfish.lemuroid.lib.storage.BaseStorageFile
 import com.swordfish.lemuroid.lib.storage.DirectoriesManager
 import com.swordfish.lemuroid.lib.storage.RomFiles
@@ -55,16 +54,10 @@ class LocalStorageProvider(
     override val enabledByDefault = true
 
     override fun listBaseStorageFiles(): Flow<List<BaseStorageFile>> =
-        walkDirectory(getExternalFolder() ?: directoriesManager.getInternalRomsDirectory())
+        walkDirectory(directoriesManager.getInternalRomsDirectory())
 
     override fun getStorageFile(baseStorageFile: BaseStorageFile): StorageFile? {
         return DocumentFileParser.parseDocumentFile(context, baseStorageFile)
-    }
-
-    private fun getExternalFolder(): File? {
-        val prefString = context.getString(R.string.pref_key_legacy_external_folder)
-        val preferenceManager = SharedPreferencesHelper.getLegacySharedPreferences(context)
-        return preferenceManager.getString(prefString, null)?.let { File(it) }
     }
 
     private fun walkDirectory(rootDirectory: File): Flow<List<BaseStorageFile>> =
@@ -82,12 +75,20 @@ class LocalStorageProvider(
                 val newFiles = groups[false] ?: listOf()
 
                 directories.addAll(newDirectories)
-                emit((newFiles.map { BaseStorageFile(it.name, it.length(), it.toUri(), it.path) }))
+
+                emit(
+                    newFiles.map {
+                        BaseStorageFile(
+                            it.name,
+                            it.length(),
+                            it.toUri(),
+                            it.path,
+                        )
+                    },
+                )
             }
         }
 
-    // There is no need to handle anything. Data file have to be in the same directory for detection we expect them
-    // to still be there.
     private fun getDataFile(dataFile: DataFile): File {
         val dataFilePath = Uri.parse(dataFile.fileUri).path
         return File(dataFilePath)
@@ -96,11 +97,18 @@ class LocalStorageProvider(
     private fun getGameRom(game: Game): File {
         val gamePath = Uri.parse(game.fileUri).path
         val originalFile = File(gamePath)
+
         if (!originalFile.isZipped() || originalFile.name == game.fileName) {
             return originalFile
         }
 
-        val cacheFile = GameCacheUtils.getCacheFileForGame(LOCAL_STORAGE_CACHE_SUBFOLDER, context, game)
+        val cacheFile =
+            GameCacheUtils.getCacheFileForGame(
+                LOCAL_STORAGE_CACHE_SUBFOLDER,
+                context,
+                game,
+            )
+
         if (cacheFile.exists()) {
             return cacheFile
         }
@@ -118,7 +126,9 @@ class LocalStorageProvider(
         dataFiles: List<DataFile>,
         allowVirtualFiles: Boolean,
     ): RomFiles {
-        return RomFiles.Standard(listOf(getGameRom(game)) + dataFiles.map { getDataFile(it) })
+        return RomFiles.Standard(
+            listOf(getGameRom(game)) + dataFiles.map { getDataFile(it) },
+        )
     }
 
     override fun getInputStream(uri: Uri): InputStream {
