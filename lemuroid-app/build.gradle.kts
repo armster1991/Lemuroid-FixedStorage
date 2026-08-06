@@ -11,8 +11,8 @@ plugins {
 android {
     defaultConfig {
         versionCode = 252
-        versionName = "1.17.0" // Always remember to update Cores Tag!
-        applicationId = "com.swordfish.lemuroid"
+        versionName = "1.17.0-fixedstorage" // Based on Lemuroid 1.17.0
+        applicationId = "com.armster1991.lemuroid.fixedstorage"
     }
     flavorDimensions += listOf("opensource", "cores")
 
@@ -83,11 +83,14 @@ android {
             storeFile = file("$rootDir/debug.keystore")
         }
 
+        // FixedStorage builds use the repository's existing debug keystore.
+        // This keeps GitHub Actions self-contained and avoids GitHub Secrets.
+        // Keep debug.keystore unchanged so future APKs can update this build.
         maybeCreate("release").apply {
-            storeFile = file("$rootDir/release.jks")
-            keyAlias = "lemuroid"
-            storePassword = "lemuroid"
-            keyPassword = "lemuroid"
+            storeFile = file("$rootDir/debug.keystore")
+            keyAlias = "androiddebugkey"
+            storePassword = "android"
+            keyPassword = "android"
         }
     }
 
@@ -96,7 +99,7 @@ android {
             isMinifyEnabled = true
             signingConfig = signingConfigs["release"]
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
-            resValue("string", "lemuroid_name", "Lemuroid")
+            resValue("string", "lemuroid_name", "Lemuroid FixedStorage")
         }
         getByName("debug") {
             applicationIdSuffix = ".debug"
