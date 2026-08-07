@@ -9,6 +9,7 @@
 ### Sobre esta fork
 
 O **Lemuroid Fixed Storage** é uma fork do [Lemuroid](https://github.com/Swordfish90/Lemuroid), um projeto de emulação open source para Android baseado em Libretro.
+Esta fork foi modificada em 06 de agosto de 2026 e permanece licenciada sob a GPL-3.0.
 
 Esta versão foi criada para resolver um problema específico em dispositivos Android TV e Google TV mais recentes:
 
@@ -142,6 +143,7 @@ Você pode ajudar a traduzir o Lemuroid pelo Crowdin:
 ### About this fork
 
 **Lemuroid Fixed Storage** is a fork of [Lemuroid](https://github.com/Swordfish90/Lemuroid), an open-source Android emulation project based on Libretro.
+This fork was modified in 06 August 2026 and remains licensed under GPL-3.0.
 
 This version was created to solve a specific problem affecting newer Android TV and Google TV devices:
 
